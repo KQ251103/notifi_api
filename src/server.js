@@ -134,6 +134,20 @@ app.post('/api/transacciones', async (req, res) => {
   }
 });
 
+// Manejo global de excepciones no capturadas
+process.on('uncaughtException', (error) => {
+  console.error('Excepción no capturada:', error);
+  // Puedes decidir si cerrar el servidor o simplemente loguear el error
+  process.exit(1); // Esto cerrará el servidor (si es necesario)
+});
+
+// Manejo global de promesas no atrapadas
+process.on('unhandledRejection', (error) => {
+  console.error('Promesa no atrapada:', error);
+  // Puedes decidir si cerrar el servidor o reiniciar el servidor
+  process.exit(1);
+});
+
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);

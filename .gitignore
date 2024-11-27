@@ -12,4 +12,3 @@ Thumbs.db  # Para Windows
 # Archivos de entorno
 .env
 
-src/firebaseServiceAccountKey.json
