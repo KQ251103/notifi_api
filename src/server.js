@@ -6,7 +6,6 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-
 // Verificar si todas las variables esenciales están cargadas correctamente
 const requiredEnvVariables = [
   'FIREBASE_API_KEY',
@@ -31,8 +30,8 @@ const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
 if (!privateKey) {
   console.error('❌ Firebase llave privada no encontrada o mal configurada.');
   process.exit(1);
-
 }
+
 const serviceAccount = {
   type: "service_account",
   project_id: process.env.FIREBASE_PROJECT_ID,
@@ -67,8 +66,30 @@ app.use(express.json());
 const db = admin.database();
 const transaccionesRef = db.ref('transacciones');
 
-// Ruta GET
+// Función para enviar la notificación a FCM
+async function sendNotification(fcmToken, transactionId, amount, method) {
+  const message = {
+    notification: {
+      title: 'Nueva Transacción',
+      body: `Recibiste un pago de ${amount} mediante ${method}`,
+    },
+    data: {
+      transactionId: transactionId,
+      amount: amount,
+      method: method,
+    },
+    token: fcmToken,
+  };
 
+  try {
+    const response = await admin.messaging().send(message);
+    console.log('Notificación enviada correctamente:', response);
+  } catch (error) {
+    console.error('Error al enviar la notificación:', error);
+  }
+}
+
+// Ruta GET
 app.get('/api/transacciones', async (req, res) => {
   try {
     const snapshot = await transaccionesRef.once('value');
@@ -80,11 +101,14 @@ app.get('/api/transacciones', async (req, res) => {
   }
 });
 
+// Ruta POST para agregar transacciones
 app.post('/api/transacciones', async (req, res) => {
-  const { nombreAplicacion, nombreUsuario, dineroTransaccionado } = req.body;
-  if (!nombreAplicacion || !nombreUsuario || !dineroTransaccionado) {
+  const { nombreAplicacion, nombreUsuario, dineroTransaccionado, fcmToken } = req.body;
+
+  if (!nombreAplicacion || !nombreUsuario || !dineroTransaccionado || !fcmToken) {
     return res.status(400).json({ error: 'Faltan datos obligatorios' });
   }
+
   try {
     const nuevaTransaccion = {
       nombreAplicacion,
@@ -92,10 +116,16 @@ app.post('/api/transacciones', async (req, res) => {
       dineroTransaccionado,
       fechaTransaccion: new Date().toISOString(),
     };
+
+    // Guardar la transacción en la base de datos
     const nuevaTransaccionRef = await transaccionesRef.push(nuevaTransaccion);
+
+    // Enviar la notificación al usuario
+    await sendNotification(fcmToken, nuevaTransaccionRef.key, dineroTransaccionado, 'Método de Pago'); // Reemplaza 'Método de Pago' por el valor correspondiente
+
     res.status(201).json({
       id: nuevaTransaccionRef.key,
-      mensaje: 'Transacción guardada correctamente',
+      mensaje: 'Transacción guardada correctamente y notificación enviada',
       transaccion: nuevaTransaccion,
     });
   } catch (error) {
