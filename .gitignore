@@ -1,0 +1,15 @@
+# Dependencias de Node.js
+node_modules/
+
+# Archivos de logs
+npm-debug.log
+yarn-error.log
+
+# Archivos generados por el sistema operativo
+.DS_Store  # Para macOS
+Thumbs.db  # Para Windows
+
+# Archivos de entorno
+.env
+
+src/firebaseServiceAccountKey.json
