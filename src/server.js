@@ -81,6 +81,13 @@ async function sendNotification(fcmToken, transactionId, amount, method) {
     token: fcmToken,
   };
 
+  console.log('Enviando notificación con los siguientes datos:', {
+    fcmToken,
+    transactionId,
+    amount,
+    method,
+  });
+
   try {
     const response = await admin.messaging().send(message);
     console.log('Notificación enviada correctamente:', response);
@@ -108,6 +115,8 @@ app.post('/api/transacciones', async (req, res) => {
   if (!nombreAplicacion || !nombreUsuario || !dineroTransaccionado || !fcmToken) {
     return res.status(400).json({ error: 'Faltan datos obligatorios' });
   }
+
+  console.log('Datos recibidos:', req.body);
 
   try {
     const nuevaTransaccion = {
@@ -137,14 +146,12 @@ app.post('/api/transacciones', async (req, res) => {
 // Manejo global de excepciones no capturadas
 process.on('uncaughtException', (error) => {
   console.error('Excepción no capturada:', error);
-  // Puedes decidir si cerrar el servidor o simplemente loguear el error
-  process.exit(1); // Esto cerrará el servidor (si es necesario)
+  process.exit(1);
 });
 
 // Manejo global de promesas no atrapadas
 process.on('unhandledRejection', (error) => {
   console.error('Promesa no atrapada:', error);
-  // Puedes decidir si cerrar el servidor o reiniciar el servidor
   process.exit(1);
 });
 
